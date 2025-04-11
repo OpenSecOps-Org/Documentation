@@ -42,13 +42,13 @@ OpenSecOps provides enterprise-grade security automation for AWS environments th
 
 ## Getting Started
 
-To install OpenSecOps, clone the [Installer repository](https://github.com/CloudSecOps-Org/Installer) and follow the instructions in its README.
+To install OpenSecOps, clone the [Installer repository](https://github.com/OpenSecOps-Org/Installer) and follow the instructions in its README.
 
 ## Community Resources
 
-- [Code of Conduct](https://github.com/CloudSecOps-Org/.github/blob/main/profile/CODE_OF_CONDUCT.md) - Our community standards
-- [Contributing Guidelines](https://github.com/CloudSecOps-Org/.github/blob/main/profile/CONTRIBUTING.md) - How to contribute to OpenSecOps
-- [Security Policy](https://github.com/CloudSecOps-Org/.github/blob/main/profile/SECURITY.md) - Reporting security vulnerabilities
+- [Code of Conduct](https://github.com/OpenSecOps-Org/.github/blob/main/profile/CODE_OF_CONDUCT.md) - Our community standards
+- [Contributing Guidelines](https://github.com/OpenSecOps-Org/.github/blob/main/profile/CONTRIBUTING.md) - How to contribute to OpenSecOps
+- [Security Policy](https://github.com/OpenSecOps-Org/.github/blob/main/profile/SECURITY.md) - Reporting security vulnerabilities
 
 ## Website
 
