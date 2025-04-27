@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.1.0
+    * Removed obsolete information.
+
 ## v1.0.2
     * Fixed documentation links to use OpenSecOps-Org instead of CloudSecOps-Org.
 
