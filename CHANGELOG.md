@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.1.1
+    * Further adjustments and removal of obsolete information.
+
 ## v1.1.0
     * Removed obsolete information.
 
