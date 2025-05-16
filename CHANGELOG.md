@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.1.2
+    * Updated screen shots, links to OpenSecOps on GitHub, and corrected a few typos.
+
 ## v1.1.1
     * Further adjustments and removal of obsolete information.
 
