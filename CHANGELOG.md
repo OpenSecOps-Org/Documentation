@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.2.0
+    * Reworked chapter 7 (Authentication and Authorisation). Minor edits otherwise.
+
 ## v1.1.2
     * Updated screen shots, links to OpenSecOps on GitHub, and corrected a few typos.
 
