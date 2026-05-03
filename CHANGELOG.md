@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.1
+    * `docs/security/supply-chain.md` §5 gains §5.5 "Continuous detection between releases" — push-based GitHub Dependabot alerts are now enabled on every OpenSecOps repository in alerts-only mode (no auto-PRs), with no SLA on detection-to-notification latency and customer-side cross-check options (`pip-audit` or OSV.dev queries against the published locks). §13 intake-checklist crosswalk gains a continuous-detection row; the existing dependency-bot row is rewritten to reference §5.5's alerts-only framing so the two rows are mutually consistent.
+
 ## v1.3.0
     * Added docs/security/supply-chain.md — authoritative cross-component customer-facing page covering supply-chain integrity, CVE response, SBOM artefacts, release verification, and an intake-checklist crosswalk for FOSS-intake reviewers, security officers, and engineers.
 

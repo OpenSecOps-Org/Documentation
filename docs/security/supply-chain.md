@@ -20,6 +20,7 @@ OpenSecOps is published source-available under [MPL-2.0](https://www.mozilla.org
   - [5.2 Malicious-package gating](#52-malicious-package-gating)
   - [5.3 Direct-dependency provenance](#53-direct-dependency-provenance)
   - [5.4 Release-time gate](#54-release-time-gate)
+  - [5.5 Continuous detection between releases](#55-continuous-detection-between-releases)
 - [6. Software Bill of Materials (SBOM)](#6-software-bill-of-materials-sbom)
   - [6.1 Aggregate component-level SBOM](#61-aggregate-component-level-sbom)
   - [6.2 Per-function evidence tarball](#62-per-function-evidence-tarball)
@@ -135,6 +136,20 @@ This addresses the locally-runnable subset of S2C2F **L3** (direct-dependency pr
 5. **Provenance check** — re-checks PyPI publisher metadata against the committed provenance baselines (§5.3); warns on drift.
 
 All five checks fire independently; failure of one does not skip the others, so a release-blocking diagnostic is always complete. The gate runs entirely on the maintainer's machine — there is no release-path CI and no automated update bots. CI presence elsewhere in the project is detection-only and read-only.
+
+### 5.5 Continuous detection between releases
+
+**Property**: a vulnerability disclosed against a pinned dependency *between* OpenSecOps releases reaches the maintainer without waiting for the next release-time gate run. The release-time gate (§5.4) blocks bad bytes from shipping; this layer surfaces newly-known issues in already-shipped (or in-development) code so a fix-bearing release can be cut within the SLA windows in §4.
+
+**Mechanism (push-based, live)**: GitHub Dependabot alerts are enabled on every OpenSecOps repository — both the public OpenSecOps-Org repos and the maintainer's development mirrors. Dependabot reads each repository's committed `requirements.txt` files and cross-references the pinned versions against the [GitHub Advisory Database](https://github.com/advisories), which ingests CVE, GHSA, and ecosystem-specific advisories. A match creates an alert on the affected repository's Security tab and routes it to the maintainer per their GitHub notification settings (web, mobile, [`gh` CLI](https://cli.github.com/)).
+
+Dependabot runs in **alerts-only** mode. Dependabot security updates (auto-PRs against vulnerable dependencies) and Dependabot version updates (routine bump PRs) are explicitly disabled. This is consistent with the cathedral governance model in §7: alerts are detection signal; the fix itself is authored and reviewed by the core team, never auto-merged.
+
+**No SLA on detection-to-notification latency**. GitHub's pipeline from advisory disclosure to alert creation is observed empirically but not promised by OpenSecOps. The contract is one-way: when GitHub knows about a vulnerability affecting a pinned OpenSecOps dependency, the maintainer learns about it; how quickly GitHub knows is GitHub's pipeline, not OpenSecOps's.
+
+**Vendor-neutral additions**: the GitHub Advisory Database is the primary source consumed by Dependabot. The OSSF malicious-packages feed is queried independently by the release-time gate (§5.2). Customers who want a vendor-neutral cross-check can run [`pip-audit`](https://pypi.org/project/pip-audit/) or query [OSV.dev](https://osv.dev/) directly against the published `requirements.txt` files at any release tag — the locks are intentionally structured so any external scanner can consume them. OpenSecOps's posture does not depend on a single advisory source.
+
+**Poll-based backstop (planned)**: a daily scan-only CI workflow on each public OpenSecOps repository is planned for a follow-up release. It will run the release-time gate's same checks (`_check-requirements.sh` + `_scan-updates.sh`) on the latest commit on a daily cron, with an explicit minimal `permissions:` map (`contents: read` + `issues: write`; everything else `none`), every Action pinned by full commit SHA, sensitive findings redacted in the public log and obtained by the maintainer rerunning locally without `--public-log`. When that lands, this subsection gains a paragraph describing it.
 
 ## 6. Software Bill of Materials (SBOM)
 
@@ -295,7 +310,8 @@ For reviewers working from a standard FOSS-intake or procurement questionnaire, 
 | Can a customer independently verify a release?             | Yes — hash verification (§9.1) and per-function SBOM determinism (§9.2)        |
 | How does a customer know whether they are exposed to a CVE? | The grep recipe in §10, run against the deployed `requirements.txt` files     |
 | Where are acknowledged-but-not-yet-fixed CVEs documented?  | Per-component `SECURITY.md` §12 (§11 of this document explains the mechanism)  |
-| Is there an automated update path / dependency bot?        | No, by design — updates are deliberate maintainer actions under the cathedral governance model (§7, §5.4) |
+| Is there continuous CVE detection between releases?        | Yes — push-based via GitHub Dependabot alerts on every OpenSecOps repository (§5.5). Poll-based daily scan-only CI is planned. |
+| Is there an automated update path / dependency bot?        | No, by design — Dependabot runs in alerts-only mode (§5.5); bumps and fixes are deliberate maintainer actions under the cathedral governance model (§7, §5.4) |
 
 For any intake question not covered above, the appropriate channel is the GitHub Security Advisory flow on the relevant component repository (§3) — including questions where the reviewer wants confirmation that an answer above applies to a specific release tag.
 
