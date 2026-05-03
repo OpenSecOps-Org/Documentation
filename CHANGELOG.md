@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.0
+    * Added docs/security/supply-chain.md — authoritative cross-component customer-facing page covering supply-chain integrity, CVE response, SBOM artefacts, release verification, and an intake-checklist crosswalk for FOSS-intake reviewers, security officers, and engineers.
+
 ## v1.2.0
     * Reworked chapter 7 (Authentication and Authorisation). Minor edits otherwise.
 
