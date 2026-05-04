@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.3
+    * `docs/security/supply-chain.md` §5.5 gains the live poll-based daily-scan layer + Scorecard externally-verifiable signals; §13 crosswalk gains a Scorecard row.
+
 ## v1.3.2
     * `docs/security/supply-chain.md`: §6 gains a SLSA Build L1 in-toto provenance asset; §8 splits into S2C2F + SLSA subsections; §9 gains Sigstore signature verification (§9.3) and lock reproducibility (§9.4) recipes; §13 crosswalk gains rows for SLSA L1, signed artefacts, and lock reproducibility.
 
