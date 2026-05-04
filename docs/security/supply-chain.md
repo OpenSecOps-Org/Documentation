@@ -21,6 +21,7 @@ OpenSecOps is published source-available under [MPL-2.0](https://www.mozilla.org
   - [5.3 Direct-dependency provenance](#53-direct-dependency-provenance)
   - [5.4 Release-time gate](#54-release-time-gate)
   - [5.5 Continuous detection between releases](#55-continuous-detection-between-releases)
+  - [5.6 Runtime-bundled dependencies](#56-runtime-bundled-dependencies)
 - [6. Software Bill of Materials (SBOM)](#6-software-bill-of-materials-sbom)
   - [6.1 Aggregate component-level SBOM](#61-aggregate-component-level-sbom)
   - [6.2 Per-function evidence tarball](#62-per-function-evidence-tarball)
@@ -160,6 +161,27 @@ Dependabot runs in **alerts-only** mode. Dependabot security updates (auto-PRs a
 - **Daily-scan workflow status** — passing badge means the most recent scheduled run exited clean against the published locks.
 
 **Vendor-neutral additions**: the GitHub Advisory Database is the primary source consumed by Dependabot. The OSSF malicious-packages feed is queried independently by the release-time gate (§5.2). Customers who want a vendor-neutral cross-check can run [`pip-audit`](https://pypi.org/project/pip-audit/) or query [OSV.dev](https://osv.dev/) directly against the published `requirements.txt` files at any release tag — the locks are intentionally structured so any external scanner can consume them. OpenSecOps's posture does not depend on a single advisory source.
+
+### 5.6 Runtime-bundled dependencies
+
+The AWS Lambda runtime ships several Python packages built-in. Two of these — `boto3` and `cfnresponse` — receive deliberately different treatment in OpenSecOps locks. Customers and reviewers reading the locks will see one explicitly hash-pinned and the other absent; the reasoning for the asymmetry is captured here.
+
+**`boto3` is explicitly hash-pinned** to a fixed exact version across every OpenSecOps component (currently `boto3==1.42.94`, with `botocore` and the rest of the AWS SDK dependency tree pinning transitively from it). The pinned version overrides whatever `boto3` ships with the Python runtime at deploy time. The reasoning:
+
+- **Drift across runtime updates**: the `boto3` version bundled with each AWS Python runtime changes when AWS updates that runtime. A Python runtime version bump can therefore silently change the `boto3` version executing OpenSecOps code. Pinning eliminates this source of non-determinism.
+- **Attack surface**: `boto3` is the full AWS SDK — every API call OpenSecOps makes against a customer's AWS account flows through it. The CVE-relevant history reflects this scope. Hash verification of every byte that calls AWS is a meaningful integrity property.
+- **Bit-reproducibility**: the supply-chain posture in §5.1 (hash-verified resolution) and §9.4 (lock reproducibility) depends on every transitive dependency being pinned. Letting `boto3` ride the runtime would leave a hole in the chain.
+
+**`cfnresponse` stays runtime-managed (unpinned)** — it is not added to any `requirements.in` and is provided by the Lambda runtime's standard import path. The reasoning runs the other direction:
+
+- **Scope**: `cfnresponse` is one file, roughly 50 lines, with a single function that builds a JSON payload and PUTs it to a CloudFormation pre-signed URL. There is no parsing of untrusted input from the network, no credential handling, no privilege-escalation path.
+- **CVE record**: effectively zero. The wire protocol has been stable for years and the code is too small to harbour meaningful bugs. Pinning would not measurably reduce a risk that does not exist.
+- **Trust root**: AWS publishes `cfnresponse` as part of the Lambda runtime image, signed and audited as part of the broader Lambda platform. The pip-installable PyPI package is an unofficial convenience copy; pinning via pip would mean trusting that fork over the AWS-canonical runtime version, which is the more-trusted source for this specific helper.
+- **Convention preservation**: AWS's own CloudFormation custom-resource examples do not pip install `cfnresponse`. Pinning it here would be an unusual choice that future maintainers and reviewers would have to investigate.
+
+**Mechanism**: a shared `boto3.in` file at the root of each converted component carries the pin. Lambda functions that import `boto3` reference it via `-r ../../boto3.in` in their `requirements.in`; the resolved version is then hash-pinned in the function's `requirements.txt` like any other dependency. `cfnresponse` is never added to any `.in`. The conversion tooling that generates `.in` files for unconverted Lambda functions follows the same rule — `boto3` import detected → `boto3.in` reference; `cfnresponse` import detected → no `.in` entry. The pinned `boto3` version is reviewed quarterly as part of the dependency-update cadence; any change to the version (or to the policy itself) ships as an explicit minor release with a CHANGELOG entry.
+
+**No claim on other runtime-bundled packages**: this section addresses `boto3` and `cfnresponse` specifically because they are the two packages OpenSecOps Lambda functions import that overlap with the runtime bundle. Other runtime-bundled packages (`urllib3`, `requests`, `simplejson`, etc.) are pulled in transitively via pinned direct dependencies and therefore inherit the same hash-verified treatment as any other transitive dependency.
 
 ## 6. Software Bill of Materials (SBOM)
 

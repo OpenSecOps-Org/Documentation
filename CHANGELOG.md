@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.4
+    * `docs/security/supply-chain.md` §5 gains §5.6 "Runtime-bundled dependencies" — documents the deliberate asymmetry between `boto3` (explicitly hash-pinned across all components, currently `boto3==1.42.94`, overrides the Lambda-runtime-bundled version) and `cfnresponse` (stays runtime-managed, unpinned). Reasoning is captured per dependency: boto3 has broad attack surface and runtime-version drift; cfnresponse has trivial scope, AWS-runtime-canonical trust root, and convention preservation. ToC updated.
+
 ## v1.3.3
     * `docs/security/supply-chain.md` §5.5 gains the live poll-based daily-scan layer + Scorecard externally-verifiable signals; §13 crosswalk gains a Scorecard row.
 
