@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.5
+    * `docs/security/supply-chain.md` §5.5 + §13 crosswalk: OpenSSF Scorecard bullet and intake row updated to reflect that publication to scorecard.dev is currently suppressed (`publish_results: false` in `scorecard.yml`) as a workaround for a Sigstore TUF rotation that the `ossf/scorecard-action` bundled `trusted_root.json` cannot chain forward through; per-check findings remain visible via SARIF upload to GitHub Code Scanning. Re-enabling dashboard publication is a one-line edit pending a refreshed action release. The longer treatment notes that Scorecard in practice is consumed primarily as a signal that one *has* a Scorecard rather than as a source of metrics any reviewer reads, and points reviewers at §5.1–§5.4, §6, and §9 as the substantive supply-chain assurance set.
+
 ## v1.3.4
     * `docs/security/supply-chain.md` §5 gains §5.6 "Runtime-bundled dependencies" — documents the deliberate asymmetry between `boto3` (explicitly hash-pinned across all components, currently `boto3==1.42.94`, overrides the Lambda-runtime-bundled version) and `cfnresponse` (stays runtime-managed, unpinned). Reasoning is captured per dependency: boto3 has broad attack surface and runtime-version drift; cfnresponse has trivial scope, AWS-runtime-canonical trust root, and convention preservation. ToC updated.
 
