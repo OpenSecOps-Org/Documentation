@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.2
+    * `docs/security/supply-chain.md`: §6 gains a SLSA Build L1 in-toto provenance asset; §8 splits into S2C2F + SLSA subsections; §9 gains Sigstore signature verification (§9.3) and lock reproducibility (§9.4) recipes; §13 crosswalk gains rows for SLSA L1, signed artefacts, and lock reproducibility.
+
 ## v1.3.1
     * `docs/security/supply-chain.md` §5 gains §5.5 "Continuous detection between releases" — push-based GitHub Dependabot alerts are now enabled on every OpenSecOps repository in alerts-only mode (no auto-PRs), with no SLA on detection-to-notification latency and customer-side cross-check options (`pip-audit` or OSV.dev queries against the published locks). §13 intake-checklist crosswalk gains a continuous-detection row; the existing dependency-bot row is rewritten to reference §5.5's alerts-only framing so the two rows are mutually consistent.
 

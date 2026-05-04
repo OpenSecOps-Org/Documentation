@@ -24,11 +24,16 @@ OpenSecOps is published source-available under [MPL-2.0](https://www.mozilla.org
 - [6. Software Bill of Materials (SBOM)](#6-software-bill-of-materials-sbom)
   - [6.1 Aggregate component-level SBOM](#61-aggregate-component-level-sbom)
   - [6.2 Per-function evidence tarball](#62-per-function-evidence-tarball)
+  - [6.3 SLSA Build L1 in-toto provenance](#63-slsa-build-l1-in-toto-provenance)
 - [7. Governance and contribution model](#7-governance-and-contribution-model)
-- [8. Maturity claims (S2C2F)](#8-maturity-claims-s2c2f)
+- [8. Maturity claims (S2C2F and SLSA)](#8-maturity-claims-s2c2f-and-slsa)
+  - [8.1 S2C2F](#81-s2c2f)
+  - [8.2 SLSA Build L1 with documented L2-adjacent controls](#82-slsa-build-l1-with-documented-l2-adjacent-controls)
 - [9. Verifying a release](#9-verifying-a-release)
   - [9.1 Hash verification of a deployed dependency set](#91-hash-verification-of-a-deployed-dependency-set)
   - [9.2 Reproducing the per-function SBOM and provenance](#92-reproducing-the-per-function-sbom-and-provenance)
+  - [9.3 Sigstore signature verification of release artefacts](#93-sigstore-signature-verification-of-release-artefacts)
+  - [9.4 Reproducing the release lock from the recorded timestamp](#94-reproducing-the-release-lock-from-the-recorded-timestamp)
 - [10. "Am I affected by CVE-XXXX?" recipe](#10-am-i-affected-by-cve-xxxx-recipe)
 - [11. Acknowledged-and-deferred CVEs](#11-acknowledged-and-deferred-cves)
 - [12. Subscribing to security advisories](#12-subscribing-to-security-advisories)
@@ -49,7 +54,7 @@ The supply-chain posture described in §5–§9 applies to every OpenSecOps comp
 - a generated `SECURITY.md` rendered from the project-wide template plus the per-component config,
 - per-function CycloneDX SBOMs (`requirements.cdx.json`) and PyPI publisher-provenance baselines (`requirements.provenance.json`) committed alongside each `requirements.in`.
 
-At the time of writing, **SOAR** and **Installer** are converted. Other OpenSecOps components (`Foundation-*`, `AFT`, the `SOAR-*` satellites) are governed by the same project-wide policies — governance, vulnerability disclosure, CVE-response SLA, MPL-2.0 licensing — and are progressively brought onto the same supply-chain artefact set; every component that has converted is held to the same uniform posture, with no per-component variation and no quiet exemptions.
+At the time of writing, **SOAR** and **Installer** are converted. Other OpenSecOps components (`Foundation-*` and the `SOAR-*` satellites) are governed by the same project-wide policies — governance, vulnerability disclosure, CVE-response SLA, MPL-2.0 licensing — and are progressively brought onto the same supply-chain artefact set; every component that has converted is held to the same uniform posture, with no per-component variation and no quiet exemptions.
 
 **Release authority** for every published artefact across every OpenSecOps component is held by the OpenSecOps core team. There is no external committer pool, no automated release path, and no auto-merge dependency bots — see §7.
 
@@ -153,7 +158,9 @@ Dependabot runs in **alerts-only** mode. Dependabot security updates (auto-PRs a
 
 ## 6. Software Bill of Materials (SBOM)
 
-Every release of a converted OpenSecOps component on the public OpenSecOps remote ships **two SBOM-related assets** attached to the GitHub release. The aggregate is a [CycloneDX 1.6](https://cyclonedx.org/specification/overview/) document; the evidence tarball is a deterministic archive containing CycloneDX 1.6 per-function documents and their provenance baselines.
+Every release of a converted OpenSecOps component on the public OpenSecOps remote ships **three release assets** attached to the GitHub release: the aggregate component-level SBOM (§6.1), the per-function evidence tarball (§6.2), and a SLSA Build L1 in-toto provenance document (§6.3). Each of the three is accompanied by a Sigstore signature bundle (file extension `.bundle`; cert + signature + Rekor transparency-log entry) for cryptographic verification — see §9.3.
+
+The aggregate is a [CycloneDX 1.6](https://cyclonedx.org/specification/overview/) document; the evidence tarball is a deterministic archive containing CycloneDX 1.6 per-function documents and their provenance baselines; the provenance document is an [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md) with a [SLSA Provenance v1](https://slsa.dev/spec/v1.2/provenance) predicate.
 
 ### 6.1 Aggregate component-level SBOM
 
@@ -188,7 +195,28 @@ https://github.com/OpenSecOps-Org/<COMPONENT>/releases/download/<VERSION>/<COMPO
 
 The per-function evidence files are also visible directly in the source tree at the canonical paths `**/requirements.cdx.json` and `**/requirements.provenance.json` next to each `requirements.in`. A reviewer who clones the repo at a specific release tag can verify the published evidence tarball against the source-tree files at that tag — the bundle is byte-deterministic and the source files are directly comparable.
 
-**Choosing between the two assets**: a reviewer needing only an inventory of components and versions stops at the aggregate (§6.1). A reviewer performing CycloneDX-mature deep audit (per-function attribution, publisher-provenance crosswalk) pulls the evidence tarball.
+**Choosing between the SBOM assets**: a reviewer needing only an inventory of components and versions stops at the aggregate (§6.1). A reviewer performing CycloneDX-mature deep audit (per-function attribution, publisher-provenance crosswalk) pulls the evidence tarball (§6.2).
+
+### 6.3 SLSA Build L1 in-toto provenance
+
+`<COMPONENT>-<VERSION>-provenance.intoto.json` — a single [in-toto Statement v1](https://github.com/in-toto/attestation/blob/main/spec/v1/statement.md) JSON document carrying a [SLSA Provenance v1](https://slsa.dev/spec/v1.2/provenance) predicate. The document attests to the build steps that produced the SBOM and evidence tarball for this release.
+
+Key fields a reviewer reads with `jq`:
+
+- `subject[]` — the SBOM and evidence tarball with their SHA-256 digests.
+- `predicate.runDetails.byproducts[]` — the named build steps that ran (`_check-requirements.sh --reproducible`, `_aggregate-sbom.sh`, `_bundle-evidence.sh`, `cosign sign-blob`).
+- `predicate.runDetails.builder.version` — the exact `uv`, `cosign`, and `python` versions used.
+- `predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit` — the source-tree git commit SHA the release was built from.
+
+This is the direct answer to "did the release gate actually fire, or was the maintainer claim asserted without running it?" A reviewer with the signed provenance document has a cryptographically attested answer rather than an indirect inference.
+
+Asset URL pattern:
+
+```
+https://github.com/OpenSecOps-Org/<COMPONENT>/releases/download/<VERSION>/<COMPONENT>-<VERSION>-provenance.intoto.json
+```
+
+OpenSecOps's SLSA level is **Build L1**. The maintainer-laptop release model documented in §7 cannot meet L2 (which explicitly requires a hosted build platform that generates and signs the provenance) without adding release-path CI, which is out of scope. The L2-adjacent controls actually implemented (Sigstore signing, hash-pinned resolution, second-machine reproducibility) are documented in §8.
 
 ## 7. Governance and contribution model
 
@@ -202,9 +230,13 @@ The cathedral framing, the no-external-PR policy, and the vulnerability-disclosu
 
 The reason this matters for supply-chain reviewers specifically: the closed-contribution model means there is no path by which an external committer can land code in an OpenSecOps release without going through the named core team. The "could a hostile contributor sneak something in?" question is closed by design rather than by review process.
 
-## 8. Maturity claims (S2C2F)
+## 8. Maturity claims (S2C2F and SLSA)
 
-Each converted OpenSecOps component implements **[S2C2F](https://github.com/ossf/s2c2f) Level 1 + Level 2 baseline plus the locally-runnable subset of Level 3**:
+Each converted OpenSecOps component implements two framework claims, both uniform across every component and documented in each component's `SECURITY.md`.
+
+### 8.1 S2C2F
+
+**[S2C2F](https://github.com/ossf/s2c2f) Level 1 + Level 2 baseline plus the locally-runnable subset of Level 3**:
 
 - **L1 + L2 baseline**: hand-edited abstract dependency spec; hash-verified resolved lock; release-time CVE scan; explicit acknowledged-and-deferred override (§11); deterministic regeneration of the lock from the same `.in` files plus the same `uv` version.
 - **L3 subset**: OSSF malicious-packages feed gating at release time (§5.2); direct-dependency PyPI provenance advisory at release time (§5.3). Both gates fire uniformly against every converted component — the same checks applied to the same artefacts in the same way, with no per-component carve-outs.
@@ -214,13 +246,23 @@ Each converted OpenSecOps component implements **[S2C2F](https://github.com/ossf
 - Any S2C2F L3 control that requires write-capable CI infrastructure (signed-from-CI rebuilds, auto-merge on green dependency bumps).
 - Any S2C2F L4 control (rebuilding OSS on trusted infrastructure, signing rebuilt OSS, implementing upstream fixes locally).
 
-These exclusions are by design: release authority remains on the maintainer machine, there is no release-path CI, and there is no internal rebuild infrastructure for upstream OSS. Pursuing them would require operational changes that this project has deliberately not made.
+### 8.2 SLSA Build L1 with documented L2-adjacent controls
 
-The maturity claim is **uniform across every converted OpenSecOps component**. It is documented in each component's `SECURITY.md` §8.
+**[SLSA v1.2](https://slsa.dev/spec/v1.2/levels) Build Level 1**: a SLSA Provenance v1 in-toto attestation is generated, signed, and distributed alongside every release (§6.3). It names the build steps that ran and the toolchain versions that produced the artefacts.
+
+In addition, the following **L2-adjacent controls** are operational on every release:
+
+- **Sigstore signing of every release artefact** — keyless OIDC, ephemeral certificate per signing event, transparency-logged in Rekor. Verification recipe in §9.3.
+- **Hash-pinned deterministic dependency resolution** — every direct and transitive dependency is hash-pinned via `uv pip compile --generate-hashes`; `pip` enforces SHA-256 hashes at install time (§5.1), and the release gate re-verifies them against PyPI before any artefact ships (§5.4).
+- **Reproducibility verification on a second machine** — every committed `requirements.txt` carries a `# uv-compiled-at:` timestamp; any second machine recompiling from the `.in` files plus the pinned `uv` version plus a clean `uv` cache plus the recorded timestamp passed as `--exclude-newer` produces bit-identical lock bytes. Verification recipe in §9.4.
+
+SLSA Build **L2** explicitly requires a hosted build platform that generates and signs the provenance. The maintainer-laptop release model in §7 cannot meet that bar without adding release-path CI; release authority remains on the maintainer machine by design.
+
+These exclusions are deliberate: release authority remains on the maintainer machine, there is no release-path CI, and there is no internal rebuild infrastructure for upstream OSS. Pursuing them would require operational changes that this project has deliberately not made.
 
 ## 9. Verifying a release
 
-Two independent verifications are available to any customer or reviewer with no maintainer cooperation, against any published OpenSecOps release tag.
+Four independent verifications are available to any customer or reviewer with no maintainer cooperation, against any published OpenSecOps release tag. They answer four distinct questions: did the bytes I downloaded come from PyPI as recorded (§9.1), are the per-function evidence files reproducible from the locks (§9.2), did the release artefacts come from an authorised OpenSecOps signing identity (§9.3), and can I re-derive the locks bit-identically from the abstract spec (§9.4).
 
 ### 9.1 Hash verification of a deployed dependency set
 
@@ -251,6 +293,50 @@ git diff --stat
 `./compile-requirements` is a top-level entry point in every converted component repository; it is a thin symlink to the canonical script in the project's `Installer` repository, distributed identically to every component by the maintainer's refresh tooling so the regeneration logic is the same script everywhere. A clean `git diff` after re-running it is the verification: the committed evidence files match what the public tooling produces from the committed locks.
 
 The aggregate component-level SBOM (§6.1) is regenerated at release time from the per-function SBOMs; once §9.1 and §9.2 are clean, the aggregate is a deterministic union of files the reviewer has already verified.
+
+### 9.3 Sigstore signature verification of release artefacts
+
+Every release artefact attached to a GitHub Release of a converted component (the aggregate SBOM, the evidence tarball, and the SLSA in-toto provenance document — see §6) ships alongside a self-contained `.bundle` file (cert + signature + Rekor transparency-log entry). To verify, install [cosign](https://docs.sigstore.dev/cosign/installation/) and run, for each artefact:
+
+```bash
+cosign verify-blob \
+  --certificate-identity     peter@peterbengtson.com \
+  --certificate-oidc-issuer  https://github.com/login/oauth \
+  --bundle                   <artefact>.bundle \
+                             <artefact>
+```
+
+A successful verification prints `Verified OK`. Any other output indicates the bytes do not match what OpenSecOps published, the signature was made by an identity not listed in the component's `SECURITY.md` §7, or the Rekor transparency-log entry has been tampered with.
+
+If the OpenSecOps core team has rotated signing identities since the release was cut and `peter@peterbengtson.com` is not the identity that signed it, the matching identity is published in the component's `SECURITY.md` §7. The Rekor transparency log at https://search.sigstore.dev/ records which identity signed each entry; if you are unsure which identity to use, search there by the artefact's SHA-256 digest.
+
+### 9.4 Reproducing the release lock from the recorded timestamp
+
+Every committed `requirements.txt` carries a `# uv-compiled-at: <timestamp>` header at line 3, recording the moment the lock was compiled. Any second machine can re-derive the lock bit-identically from the abstract spec given four inputs: (i) the committed `.in` files, (ii) the pinned `uv` version, (iii) a clean `uv` cache, (iv) the recorded timestamp passed to `uv pip compile` as `--exclude-newer`. The fence stops uv from picking up newer PyPI uploads inside declared version ranges, eliminating the spurious-drift mode where two machines compiling at different wall-clock times produce different hashes for the same `.in`.
+
+To verify against any release tag:
+
+```bash
+# From the root of a converted component repo, at a specific release tag:
+cd <component-repo>/
+
+# For each requirements.in in the source tree:
+ts=$(grep -m1 '^# uv-compiled-at:' path/to/requirements.txt | cut -d' ' -f3)
+clean_cache=$(mktemp -d)
+UV_CACHE_DIR=$clean_cache uv pip compile --generate-hashes \
+    --exclude-newer "$ts" \
+    path/to/requirements.in \
+    -o /tmp/verify-lock.txt
+rm -rf $clean_cache
+
+# Diff against the committed lock, ignoring the uv 2-line autogen
+# header (which records the temp -o path) and the uv-compiled-at line
+# (which is an input to resolution, not output content):
+diff <(tail -n +3 path/to/requirements.txt | grep -v '^# uv-compiled-at:') \
+     <(tail -n +3 /tmp/verify-lock.txt     | grep -v '^# uv-compiled-at:')
+```
+
+A clean diff means the committed lock is bit-reproducible from the abstract spec at the recorded compile time. The release-time gate (`./publish` invokes `_check-requirements.sh --reproducible`) runs this same verification on every publish; running it again on a customer machine independently confirms the maintainer's gate fired correctly.
 
 ## 10. "Am I affected by CVE-XXXX?" recipe
 
@@ -303,11 +389,14 @@ For reviewers working from a standard FOSS-intake or procurement questionnaire, 
 | Is there a release-time CVE scan that gates publication?   | Yes — `pip-audit` against every committed lock; fail-closed (§5.4)             |
 | Is there a malicious-package check at release time?        | Yes — OSSF malicious-packages feed cross-reference (§5.2)                      |
 | Is there direct-dependency provenance verification?        | Yes — committed PyPI publisher-provenance baselines, advisory drift check (§5.3) |
-| What S2C2F level is claimed?                               | L1 + L2 baseline + locally-runnable subset of L3, uniform per converted component (§8) |
+| What S2C2F level is claimed?                               | L1 + L2 baseline + locally-runnable subset of L3, uniform per converted component (§8.1) |
+| What SLSA level is claimed?                                | Build L1, with Sigstore signing, hash-pinned resolution, and second-machine reproducibility documented as L2-adjacent controls (§8.2) |
+| Are release artefacts cryptographically signed?            | Yes — Sigstore keyless signing on every release artefact; verification recipe in §9.3 |
+| Can a customer reproduce the lock from the abstract spec?  | Yes — bit-identical from `.in` files plus pinned `uv` version plus clean cache plus committed `# uv-compiled-at:` timestamp fence (§9.4) |
 | Are external pull requests accepted?                       | No — cathedral model (§7); vulnerability *reports* are the explicit carve-out  |
 | Is there a backport policy for older releases?             | No — fixes ship as new releases (§2)                                           |
 | What licence?                                              | [MPL-2.0](https://www.mozilla.org/en-US/MPL/2.0/) across every component       |
-| Can a customer independently verify a release?             | Yes — hash verification (§9.1) and per-function SBOM determinism (§9.2)        |
+| Can a customer independently verify a release?             | Yes — four independent mechanisms: hash verification (§9.1), per-function SBOM determinism (§9.2), Sigstore signature verification (§9.3), lock reproducibility from the abstract spec (§9.4) |
 | How does a customer know whether they are exposed to a CVE? | The grep recipe in §10, run against the deployed `requirements.txt` files     |
 | Where are acknowledged-but-not-yet-fixed CVEs documented?  | Per-component `SECURITY.md` §12 (§11 of this document explains the mechanism)  |
 | Is there continuous CVE detection between releases?        | Yes — push-based via GitHub Dependabot alerts on every OpenSecOps repository (§5.5). Poll-based daily scan-only CI is planned. |
