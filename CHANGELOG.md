@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.6
+    * `docs/security/supply-chain.md` §1: converted-set listing updated from "SOAR and Installer" to the full current set (Installer, SOAR, Foundation-control-tower-log-aggregator, Foundation-default-vpc-remover, Foundation-infra-immutable-tagger, Foundation-instance-port-report, Foundation-limit-log-group-retention, SOAR-all-alarms-to-sec-hub, SOAR-detect-log-buckets, SOAR-detect-stack-drift, SOAR-SAM-Automating-Forensic-Disk-Collection, SOAR-soc-incident-when-s3-tag-applied). §14 glossary entry for "Converted component" reworded to point at §1 rather than naming the set inline, so future conversions only require the §1 update.
+
 ## v1.3.5
     * `docs/security/supply-chain.md` §5.5 + §13 crosswalk: OpenSSF Scorecard bullet and intake row updated to reflect that publication to scorecard.dev is currently suppressed (`publish_results: false` in `scorecard.yml`) as a workaround for a Sigstore TUF rotation that the `ossf/scorecard-action` bundled `trusted_root.json` cannot chain forward through; per-check findings remain visible via SARIF upload to GitHub Code Scanning. Re-enabling dashboard publication is a one-line edit pending a refreshed action release. The longer treatment notes that Scorecard in practice is consumed primarily as a signal that one *has* a Scorecard rather than as a source of metrics any reviewer reads, and points reviewers at §5.1–§5.4, §6, and §9 as the substantive supply-chain assurance set.
 
