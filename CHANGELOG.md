@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.3.7
+    * Enable auto-close workflow for external pull requests, enforcing the cathedral governance policy uniformly across all OpenSecOps repositories. Pull requests from non-team authors are closed automatically with a redirect comment pointing to the bug-report template, the GitHub Security Advisory flow, and the fork-under-MPL-2.0 path.
+    * `docs/security/supply-chain.md` §1: add a cross-link to the [Trust page](https://www.opensecops.org/trust.html) alongside the existing intake-checklist pointer, positioning the Trust page as the lighter customer-facing synthesis and this document as the canonical reference.
+
 ## v1.3.6
     * `docs/security/supply-chain.md` §1: converted-set listing updated from "SOAR and Installer" to the full current set (Installer, SOAR, Foundation-control-tower-log-aggregator, Foundation-default-vpc-remover, Foundation-infra-immutable-tagger, Foundation-instance-port-report, Foundation-limit-log-group-retention, SOAR-all-alarms-to-sec-hub, SOAR-detect-log-buckets, SOAR-detect-stack-drift, SOAR-SAM-Automating-Forensic-Disk-Collection, SOAR-soc-incident-when-s3-tag-applied). §14 glossary entry for "Converted component" reworded to point at §1 rather than naming the set inline, so future conversions only require the §1 update.
 

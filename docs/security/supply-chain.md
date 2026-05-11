@@ -59,7 +59,7 @@ At the time of writing, the converted set is **Installer**, **SOAR**, **Foundati
 
 **Release authority** for every published artefact across every OpenSecOps component is held by the OpenSecOps core team. There is no external committer pool, no automated release path, and no auto-merge dependency bots — see §7.
 
-Reviewers working from a procurement or FOSS-intake checklist may want to skip ahead to §13 for a question-by-question crosswalk; the sections leading up to it carry the framing and warrants the crosswalk's "by design" answers depend on.
+Reviewers working from a procurement or FOSS-intake checklist may want to skip ahead to §13 for a question-by-question crosswalk; the sections leading up to it carry the framing and warrants the crosswalk's "by design" answers depend on. For a lighter synthesis of the same material — posture statement, release artefacts, the four independent verifications, governance model — see the [Trust page](https://www.opensecops.org/trust.html), which is the customer-facing landing page for the supply-chain story. This document is the canonical reference; the Trust page is the synthesis.
 
 ## 2. Supported versions and the release model
 
