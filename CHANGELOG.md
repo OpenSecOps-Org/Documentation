@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.9
+    * `docs/security/supply-chain.md` §1: rewrote the converted-set listing to name all 24 OpenSecOps components alphabetically, and replaced the Python-only conversion-artefact list with a two-shape description (Python-bearing components carry `requirements.in`/`requirements.txt`/SBOM/provenance; libraryless components emit a deterministic `git archive HEAD` source tarball plus a SLSA Build L1 in-toto provenance document, all Sigstore-signed identically). Reflects the steady-state where every component publishes through the same `./publish` toolchain.
+
 ## v1.3.8
     * Releases of this repository are now Sigstore-signed. Each GitHub Release ships four assets: the `git archive HEAD` source tarball, a SLSA Build L1 in-toto provenance document attesting to it, and Sigstore `.bundle` signatures for each. Customers downloading the docs can verify the bytes against the OpenSecOps signing identity using the recipe in `docs/security/supply-chain.md` §9.3.
 
