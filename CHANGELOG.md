@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.8
+    * Releases of this repository are now Sigstore-signed. Each GitHub Release ships four assets: the `git archive HEAD` source tarball, a SLSA Build L1 in-toto provenance document attesting to it, and Sigstore `.bundle` signatures for each. Customers downloading the docs can verify the bytes against the OpenSecOps signing identity using the recipe in `docs/security/supply-chain.md` §9.3.
+
 ## v1.3.7
     * Enable auto-close workflow for external pull requests, enforcing the cathedral governance policy uniformly across all OpenSecOps repositories. Pull requests from non-team authors are closed automatically with a redirect comment pointing to the bug-report template, the GitHub Security Advisory flow, and the fork-under-MPL-2.0 path.
     * `docs/security/supply-chain.md` §1: add a cross-link to the [Trust page](https://www.opensecops.org/trust.html) alongside the existing intake-checklist pointer, positioning the Trust page as the lighter customer-facing synthesis and this document as the canonical reference.
