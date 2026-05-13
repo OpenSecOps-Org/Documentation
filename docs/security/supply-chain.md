@@ -27,6 +27,7 @@ OpenSecOps is published source-available under [MPL-2.0](https://www.mozilla.org
   - [6.2 Per-function evidence tarball](#62-per-function-evidence-tarball)
   - [6.3 SLSA Build L1 in-toto provenance](#63-slsa-build-l1-in-toto-provenance)
 - [7. Governance and contribution model](#7-governance-and-contribution-model)
+  - [7.1 Development environment posture](#71-development-environment-posture)
 - [8. Maturity claims (S2C2F and SLSA)](#8-maturity-claims-s2c2f-and-slsa)
   - [8.1 S2C2F](#81-s2c2f)
   - [8.2 SLSA Build L1 with documented L2-adjacent controls](#82-slsa-build-l1-with-documented-l2-adjacent-controls)
@@ -254,6 +255,39 @@ The cathedral framing, the no-external-PR policy, and the vulnerability-disclosu
 
 The reason this matters for supply-chain reviewers specifically: the closed-contribution model means there is no path by which an external committer can land code in an OpenSecOps release without going through the named core team. The "could a hostile contributor sneak something in?" question is closed by design rather than by review process.
 
+### 7.1 Development environment posture
+
+Because §7 places release authority on the maintainer machine and §8.2 documents Sigstore keyless OIDC signing from the same machine, the **development environment is the build environment** for every OpenSecOps release. This sub-section names the controls operating on that environment. The list is short by design: the cathedral / no-CI / keyless-signing posture has eliminated most of the asset categories a hosted-CI review would have to enumerate.
+
+**Workstation controls** on every maintainer laptop:
+
+- **Full-disk encryption** — Apple FileVault is enabled. The encrypted volume is the only place uncommitted source, lock files, and the local `cosign` cache live.
+- **Automatic screen lock** is enabled.
+- **Automatic operating-system updates** are enabled; security patches install on the vendor's published cadence without maintainer action.
+- **Credential storage** is in a password manager with maximum-entropy random passwords for every distinct identity; no password is reused across services.
+
+**Identity controls** on every release-signing identity:
+
+- **GitHub MFA is enforced via a hardware-bound passkey** (FIDO2 / WebAuthn). Sigstore keyless signing (§8.2) takes its OIDC token from this identity, so every signing event is gated on the passkey by construction — an attacker holding the password but not the bound authenticator cannot complete OIDC. Phishing-resistant for the same reason.
+- **The `OpenSecOps-Org` GitHub organisation requires MFA** for every member; no maintainer without MFA can be added.
+- **Branch protection is enforced on `main`** for every converted repository, re-verified weekly by OpenSSF Scorecard (§5.5).
+
+**What the cathedral model removes from the threat surface** — absent by design, not unenumerated:
+
+- **No long-lived signing keys.** Sigstore keyless OIDC issues an ephemeral certificate per signing event; no signing-key file lives on the maintainer machine to be exfiltrated.
+- **No CI release path.** There is no GitHub Actions runner, no service account, no personal-access token, and no auto-merge bot with release-cutting rights. The "compromised CI token releases a malicious version" failure mode is closed because the asset does not exist.
+- **No external committers.** §7 closes the contribution path; no third-party workstation holds commit-or-release rights to any OpenSecOps repository. Forks under [MPL-2.0](https://www.mozilla.org/en-US/MPL/2.0/) produce independent artefacts, not OpenSecOps releases.
+
+**What is logged for audit:**
+
+- **Sigstore Rekor public transparency log** records every signing event against the identities published in each component's `SECURITY.md` §7. Externally readable at https://search.sigstore.dev/ without OpenSecOps cooperation.
+- **GitHub organisation audit log** records member changes, repository administrative events, and branch-protection edits on `OpenSecOps-Org`.
+- **OpenSSF Scorecard SARIF** records branch-protection state and dangerous-workflow-pattern findings in each repository's GitHub Code Scanning view, refreshed weekly (§5.5).
+
+**Scope.** This sub-section describes the controls applied to the single-maintainer core team that holds release authority today. As the core team expands (§7), additional members must meet the same workstation and identity baseline before being added to the `OpenSecOps-Org` organisation; the signing-identity table in each component's `SECURITY.md` §7 is the record of who meets it.
+
+**Future expansion contingent on client requirement.** The deliberate exclusions above are positions chosen on supply-chain grounds, not capability limits. CI/CD-anchored controls (SLSA Build L2 in particular, plus any S2C2F or SSDF item that presumes a hosted build platform) will be considered if a specific enterprise customer requires them; the path forward in that case is a scoped, read-only, signing-capable hosted build runner adopted as a deliberate change of posture, not as the current operational mode.
+
 ## 8. Maturity claims (S2C2F and SLSA)
 
 Each converted OpenSecOps component implements two framework claims, both uniform across every component and documented in each component's `SECURITY.md`.
@@ -417,6 +451,7 @@ For reviewers working from a standard FOSS-intake or procurement questionnaire, 
 | What SLSA level is claimed?                                | Build L1, with Sigstore signing, hash-pinned resolution, and second-machine reproducibility documented as L2-adjacent controls (§8.2) |
 | Are release artefacts cryptographically signed?            | Yes — Sigstore keyless signing on every release artefact; verification recipe in §9.3 |
 | Can a customer reproduce the lock from the abstract spec?  | Yes — bit-identical from `.in` files plus pinned `uv` version plus clean cache plus committed `# uv-compiled-at:` timestamp fence (§9.4) |
+| Are development and build environments secured?           | Yes — §7.1: full-disk encryption, hardware-bound passkey MFA on every release-signing identity, organisation-wide MFA enforcement, branch protection on `main`; no long-lived signing keys, no CI release path, no external committers by design |
 | Are external pull requests accepted?                       | No — cathedral model (§7); vulnerability *reports* are the explicit carve-out  |
 | Is there a backport policy for older releases?             | No — fixes ship as new releases (§2)                                           |
 | What licence?                                              | [MPL-2.0](https://www.mozilla.org/en-US/MPL/2.0/) across every component       |
