@@ -1,5 +1,7 @@
 # OpenSecOps Documentation
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12827/badge)](https://www.bestpractices.dev/projects/12827)
+
 This repository contains comprehensive documentation for the OpenSecOps platform, including installation guides, technical design specifications, and standard operating procedures for Foundation and SOAR products.
 
 ## Documentation Structure

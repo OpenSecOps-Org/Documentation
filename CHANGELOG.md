@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.3.11
+    * OpenSecOps awarded the OpenSSF Best Practices Passing-level badge (project entry [bestpractices.dev/projects/12827](https://www.bestpractices.dev/projects/12827)). `README.md` carries the badge at the top; `docs/security/supply-chain.md` §13 intake-checklist crosswalk gains a corresponding row stating the level achieved, the project URL, and the controls the attestation covers.
+
 ## v1.3.10
     * `docs/security/supply-chain.md` §7 gains §7.1 "Development environment posture" — names the controls operating on the cathedral / maintainer-laptop release environment: workstation controls (FileVault, automatic screen lock, automatic OS updates, password manager with maximum-entropy random passwords), identity controls (hardware-bound passkey MFA on every release-signing identity, `OpenSecOps-Org` organisation-wide MFA enforcement, branch protection on `main` re-verified weekly by OpenSSF Scorecard), what the cathedral model removes from the threat surface (no long-lived signing keys, no CI release path, no external committers), and what is logged for audit (Sigstore Rekor public transparency log, GitHub organisation audit log, Scorecard SARIF). Closes with a "future expansion contingent on client requirement" paragraph stating CI/CD-anchored controls (SLSA Build L2 in particular, plus any S2C2F or SSDF item presuming a hosted build platform) will be considered if a specific enterprise customer requires them. ToC and §13 intake-checklist crosswalk updated.
 
